@@ -7,6 +7,8 @@ use Facebook\WebDriver\Chrome\ChromeOptions;
 use Facebook\WebDriver\Remote\DesiredCapabilities;
 use Facebook\WebDriver\Remote\RemoteWebDriver;
 use Laravel\Dusk\TestCase as BaseTestCase;
+use Symfony\Component\Process\Process;
+use Symfony\Component\Process\ProcessUtils;
 
 abstract class DuskTestCase extends BaseTestCase
 {
@@ -29,9 +31,14 @@ abstract class DuskTestCase extends BaseTestCase
      */
     protected function driver(): RemoteWebDriver
     {
+        // $user_agent = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:91.0) Gecko/20100101 Firefox/91.0";
+
         $options = (new ChromeOptions)->addArguments(collect([
             $this->shouldStartMaximized() ? '--start-maximized' : '--window-size=1920,1080',
         ])->unless($this->hasHeadlessDisabled(), function (Collection $items) {
+
+            // #NOTE: To disable dusk headless in env file: DUSK_HEADLESS_DISABLED=true
+
             return $items->merge([
                 '--disable-gpu',
                 '--headless=new',
@@ -46,13 +53,31 @@ abstract class DuskTestCase extends BaseTestCase
         );
     }
 
+    public static function runServer()
+    {
+        $env = 'testing';
+
+        // env testing: APP_URL=http://localhost:8081
+        
+        $webserver = new Process(array(PHP_BINARY, 'artisan', 'serve', '--port=8081', '--env=' .  $env));
+        $webserver->disableOutput();
+        $webserver->start();
+    }
+
+    public static function setUpBeforeClass(): void
+    {
+        self::runServer();
+    }
+
+
     /**
      * Determine whether the Dusk command has disabled headless mode.
      */
-    protected function hasHeadlessDisabled(): bool
+    protected function hasHeadlessDisabled()
     {
         return isset($_SERVER['DUSK_HEADLESS_DISABLED']) ||
-               isset($_ENV['DUSK_HEADLESS_DISABLED']);
+            isset($_ENV['DUSK_HEADLESS_DISABLED']) ||
+            env('HEADLESS') === 0;
     }
 
     /**

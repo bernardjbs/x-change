@@ -4,9 +4,12 @@
 /public/storage
 /storage/*.key
 /vendor
+/tests/browser/console
+/tests/browser/screenshots
 .env
 .env.backup
 .env.production
+.env.testing
 .phpunit.result.cache
 Homestead.json
 Homestead.yaml
